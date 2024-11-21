@@ -1,6 +1,6 @@
 from django.db import models
 import datetime
-
+from mongoengine import Document, StringField, PointField, DateTimeField
 
 class GPSData(models.Model):
     device_id = models.CharField(max_length=100)
@@ -17,15 +17,14 @@ class SensorData(models.Model):
     gyroscope = models.JSONField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
-class VehicleData(models.Model):
-    device_id = models.CharField(max_length=100)
-    location = models.JSONField()  # Replacing PointField with JSONField
-    timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
+class VehicleData(Document):
+    device_id = StringField(max_length=100, required=True)
+    location = PointField(required=True)
+    timestamp = DateTimeField(required=True)
 
     def __str__(self):
         return f"{self.device_id} at {self.timestamp}"
     
-
 class School(models.Model):
     name = models.CharField(max_length=200)
     location = models.JSONField()  # Replacing PointField with JSONField

@@ -13,7 +13,7 @@ def gps_data_view(request):
     return JsonResponse(list(gps_data), safe=False)
 
 def map_view(request):
-    return render(request, 'map.html')
+    return render(request, 'map.html', {})
 
 class GPSDataCreateView(generics.ListCreateAPIView):
     queryset = GPSData.objects.all()
@@ -49,35 +49,37 @@ class VehicleDataListCreateView(generics.ListCreateAPIView):
     queryset = VehicleData.objects.all()
     serializer_class = VehicleDataSerializer
 
+@api_view(['POST'])
 def create_vehicle(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        vehicle = VehicleData.objects.create(
-            device_id=data['device_id'],
-            location=data['location'],
-            timestamp=datetime.datetime.utcnow()
-        )
-        return JsonResponse({'id': str(vehicle.id)}, status=201)
+    data = json.loads(request.body)
+    vehicle = VehicleData.objects.create(
+        device_id=data['device_id'],
+        location=data['location'],
+        timestamp=datetime.datetime.utcnow()
+    )
+    return Response({'id': str(vehicle.id)}, status=201)
 
+@api_view(['GET'])
 def read_vehicle(request, vehicle_id):
     vehicle = get_object_or_404(VehicleData, id=vehicle_id)
-    return JsonResponse({
+    return Response({
         'device_id': vehicle.device_id,
         'location': vehicle.location,
         'timestamp': vehicle.timestamp.isoformat()
     })
 
+@api_view(['PUT'])
 def update_vehicle(request, vehicle_id):
     vehicle = get_object_or_404(VehicleData, id=vehicle_id)
-    if request.method == 'PUT':
-        data = json.loads(request.body)
-        vehicle.device_id = data['device_id']
-        vehicle.location = data['location']
-        vehicle.timestamp = datetime.datetime.utcnow()
-        vehicle.save()
-        return JsonResponse({'status': 'updated'})
+    data = json.loads(request.body)
+    vehicle.device_id = data['device_id']
+    vehicle.location = data['location']
+    vehicle.timestamp = datetime.datetime.utcnow()
+    vehicle.save()
+    return Response({'status': 'updated'})
 
+@api_view(['DELETE'])
 def delete_vehicle(request, vehicle_id):
     vehicle = get_object_or_404(VehicleData, id=vehicle_id)
     vehicle.delete()
-    return JsonResponse({'status': 'deleted'})
+    return Response({'status': 'deleted'})
