@@ -1,5 +1,4 @@
-from django.contrib.gis.db import models
-from mongoengine import Document, StringField, FloatField, PointField, DateTimeField
+from django.db import models
 import datetime
 
 
@@ -18,19 +17,19 @@ class SensorData(models.Model):
     gyroscope = models.JSONField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
-class VehicleData(Document):
-    device_id = StringField(max_length=100, required=True)
-    location = PointField(required=True)  # Use PointField for geospatial data
-    timestamp = DateTimeField(default=datetime.datetime.utcnow)
+class VehicleData(models.Model):
+    device_id = models.CharField(max_length=100)
+    location = models.JSONField()  # Replacing PointField with JSONField
+    timestamp = models.DateTimeField(default=datetime.datetime.utcnow)
 
     def __str__(self):
         return f"{self.device_id} at {self.timestamp}"
     
 
-class School(Document):
-    name = StringField(required=True, max_length=200)
-    location = PointField(required=True)  # Use PointField for geospatial data
-    address = StringField()
+class School(models.Model):
+    name = models.CharField(max_length=200)
+    location = models.JSONField()  # Replacing PointField with JSONField
+    address = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
