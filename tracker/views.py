@@ -1,10 +1,9 @@
-from .models import GPSData, SensorData, VehicleData, School
-from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from rest_framework_mongoengine import generics
-from rest_framework_mongoengine.viewsets import ModelViewSet
+from django.shortcuts import render, get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework_mongoengine import generics
+from .models import GPSData, SensorData, VehicleData, School
 from .serializers import GPSDataSerializer, SensorDataSerializer, SchoolSerializer, VehicleDataSerializer
 import json
 import datetime
@@ -25,20 +24,20 @@ class SensorDataList(generics.ListCreateAPIView):
     serializer_class = SensorDataSerializer
 
 def vehicle_data_view(request):
-    vehicle_data = VehicleData.objects.all()
-    return render(request, 'vehicle_data.html', {'vehicle_data': vehicle_data})
+    vehicles = VehicleData.objects.all().values('device_id', 'location', 'timestamp')
+    return JsonResponse(list(vehicles), safe=False)
 
 @api_view(['GET', 'POST'])
 def school_list_create(request):
     if request.method == 'POST':
         serializer = SchoolSerializer(data=request.data)
         if serializer.is_valid():
-            school = serializer.save()  # Save school to the database
+            school = serializer.save()
             return Response(SchoolSerializer(school).data, status=201)
         return Response(serializer.errors, status=400)
     
     if request.method == 'GET':
-        schools = School.objects()
+        schools = School.objects.all()
         serializer = SchoolSerializer(schools, many=True)
         return Response(serializer.data)
 

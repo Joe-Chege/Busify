@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Map</title>
+    <title>School and Vehicle Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -19,7 +19,7 @@
             height: 100%;
         }
 
-        #school-list-container {
+        #info-container {
             flex: 1;
             overflow-y: auto;
             border-left: 1px solid #ccc;
@@ -32,72 +32,48 @@
             height: 100%;
         }
 
-        #school-list {
+        #school-list, #vehicle-list {
             list-style-type: none;
             padding: 0;
             margin: 0;
         }
 
-        #school-list li {
+        #school-list li, #vehicle-list li {
             cursor: pointer;
             color: blue;
             text-decoration: underline;
             margin-bottom: 5px;
         }
 
-        #school-list li:hover {
+        #school-list li:hover, #vehicle-list li:hover {
             text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div id="map-container">
-        <div id="map" style="height: 600px;"></div>
+        <div id="map"></div>
     </div>
-    <div id="school-list-container">
+    <div id="info-container">
         <h3>Partner Schools</h3>
         <ul id="school-list"></ul>
+        <h3>Vehicles</h3>
+        <ul id="vehicle-list"></ul>
     </div>
     <script>
-        // Mapbox access token
-        const accessToken = 'pk.eyJ1Ijoiam9lY2hlZ2UiLCJhIjoiY20zbmN6NHRpMTJzNTJqcXo4bnhxOHp1dSJ9.gKMaFg9jgeDiqSQqKMwOtw';
-
-        // Initialize the map centered on Nairobi with a sensible zoom level
+        // Initialize the map centered on Nairobi with a zoom level of 12
         var map = L.map('map').setView([-1.286389, 36.817223], 12);
-        // Fetch schools dynamically from the API
-        fetch('/api/schools/')
-            .then(response => response.json())
-            .then(schools => {
-                const schoolList = document.getElementById('school-list');
-                schools.forEach(school => {
-                    // Add to school list
-                    const listItem = document.createElement('li');
-                    listItem.textContent = school.name;
-                    listItem.onclick = function () {
-                        map.setView(school.location.coordinates, 18);
-                        L.marker(school.location.coordinates, { icon: schoolIcon })
-                            .addTo(map)
-                            .bindPopup(school.name)
-                            .openPopup();
-                    };
-                    schoolList.appendChild(listItem);
 
-                    // Add marker to the map
-                    L.marker(school.location.coordinates, { icon: schoolIcon })
-                        .addTo(map)
-                        .bindPopup(school.name);
-                });
-            })
-            .catch(error => console.error('Error fetching schools:', error));
-        // Add Mapbox Satellite Streets tiles
+        // Add a Mapbox Satellite Streets tile layer
+        const accessToken = 'pk.eyJ1Ijoiam9lY2hlZ2UiLCJhIjoiY20zbmN6NHRpMTJzNTJqcXo4bnhxOHp1dSJ9.gKMaFg9jgeDiqSQqKMwOtw';
         L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
             attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a> contributors',
             tileSize: 512,
             zoomOffset: -1,
-            maxZoom: 18 // Set maximum zoom for detailed viewing
+            maxZoom: 18
         }).addTo(map);
 
-        // Define the custom school icon
+        // Define custom icons for schools and vehicles
         var schoolIcon = L.icon({
             iconUrl: '/static/school-icon.png',
             iconSize: [25, 41],
@@ -107,44 +83,73 @@
             shadowSize: [41, 41]
         });
 
-        // List of partner schools
-        const schools = [
-            { name: "Nairobi Milimani Secondary School", coordinates: [-1.2828547378490278, 36.80720808752973] },
-            { name: "LIGHT ACADEMY PRI SCH, KILIMANI", coordinates: [-1.2896378503963155, 36.77005776125603]},
-            { name: "St. Mary's School", coordinates: [-1.2638693868611113, 36.77962511200248] },
-            { name: "Strathmore School", coordinates: [-1.269661562904382, 36.777132394781745] },
-            { name: "Sunrise Primary School", coordinates: [-1.2629885005113652, 36.92540942799898] },
-            { name: "Muslim Academy, Park Road", coordinates: [-1.2753500540456968, 36.831805016775455] },
-            { name: "Acacia Brook Schools", coordinates: [-1.1668828591959224, 36.92208333236396] },
-            { name: "Nairobi Academy", coordinates: [-1.3392039602725954, 36.75207109124131] },
-            { name: "Scholars International", coordinates: [-1.2855, 36.7922] },
-            { name: "Pioneer High School", coordinates: [-1.2915, 36.8180] }
-            
-        ];
-
-        // Fit map bounds to schools' locations
-        var bounds = L.latLngBounds();
-
-        // Populate the map and school list
-        const schoolList = document.getElementById('school-list');
-        schools.forEach(school => {
-            const listItem = document.createElement('li');
-            listItem.textContent = school.name;
-
-            // On click, zoom to school
-            listItem.onclick = function () {
-                map.setView(school.coordinates, 18); // Detailed zoom level
-                L.marker(school.coordinates, { icon: schoolIcon }).addTo(map).bindPopup(school.name).openPopup();
-            };
-            schoolList.appendChild(listItem);
-
-            // Add markers to the map
-            const marker = L.marker(school.coordinates, { icon: schoolIcon }).addTo(map).bindPopup(school.name);
-            bounds.extend(marker.getLatLng()); // Extend map bounds
+        var vehicleIcon = L.icon({
+            iconUrl: '/static/vehicle-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            shadowSize: [41, 41]
         });
 
-        // Adjust the map view to fit all schools
-        map.fitBounds(bounds);
+        // Fetch and display schools
+        fetch('/api/schools/')
+            .then(response => response.json())
+            .then(schools => {
+                const schoolList = document.getElementById('school-list');
+                schools.forEach(school => {
+                    // Add school to list
+                    const listItem = document.createElement('li');
+                    listItem.textContent = school.name;
+                    listItem.onclick = function () {
+                        map.setView(school.location.coordinates.reverse(), 18);
+                        L.marker(school.location.coordinates.reverse(), { icon: schoolIcon })
+                            .addTo(map)
+                            .bindPopup(`<b>${school.name}</b><br>${school.address}`)
+                            .openPopup();
+                    };
+                    schoolList.appendChild(listItem);
+
+                    // Add school marker to map
+                    L.marker(school.location.coordinates.reverse(), { icon: schoolIcon })
+                        .addTo(map)
+                        .bindPopup(`<b>${school.name}</b><br>${school.address}`);
+                });
+            })
+            .catch(error => console.error('Error fetching schools:', error));
+
+        // Fetch and display vehicle data, refreshing every 5 seconds
+        function updateVehicles() {
+            fetch('/api/vehicle-data/')
+                .then(response => response.json())
+                .then(vehicles => {
+                    const vehicleList = document.getElementById('vehicle-list');
+                    vehicleList.innerHTML = ''; // Clear previous vehicle data
+
+                    vehicles.forEach(vehicle => {
+                        // Add vehicle to list
+                        const listItem = document.createElement('li');
+                        listItem.textContent = vehicle.device_id;
+                        listItem.onclick = function () {
+                            map.setView(vehicle.location.coordinates.reverse(), 16);
+                            L.marker(vehicle.location.coordinates.reverse(), { icon: vehicleIcon })
+                                .addTo(map)
+                                .bindPopup(`<b>Device ID:</b> ${vehicle.device_id}<br><b>Timestamp:</b> ${new Date(vehicle.timestamp).toLocaleString()}`)
+                                .openPopup();
+                        };
+                        vehicleList.appendChild(listItem);
+
+                        // Add vehicle marker to map
+                        L.marker(vehicle.location.coordinates.reverse(), { icon: vehicleIcon })
+                            .addTo(map)
+                            .bindPopup(`<b>Device ID:</b> ${vehicle.device_id}<br><b>Timestamp:</b> ${new Date(vehicle.timestamp).toLocaleString()}`);
+                    });
+                })
+                .catch(error => console.error('Error fetching vehicles:', error));
+        }
+
+        // Refresh vehicle data every 5 seconds
+        setInterval(updateVehicles, 5000);
     </script>
 </body>
 </html>
