@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from pymongo import MongoClient
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_mongoengine import generics
@@ -33,10 +34,10 @@ def vehicle_data_view(request):
 @api_view(['GET', 'POST'])
 def school_list_create(request):
     if request.method == 'POST':
-        serializer = SchoolSerializer(data=request.data)
+        serializer = SchoolSerializer(data=request.data, many=isinstance(request.data, list))
         if serializer.is_valid():
-            school = serializer.save()
-            return Response(SchoolSerializer(school).data, status=201)
+            serializer.save()
+            return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
     if request.method == 'GET':
@@ -96,3 +97,9 @@ def delete_vehicle(request, vehicle_id):
     vehicle = get_object_or_404(VehicleData, id=vehicle_id)
     vehicle.delete()
     return Response({'status': 'deleted'})
+
+def school_list_view(request):
+    client = MongoClient("mongodb+srv://ivan:,.@cluster0.jksfa.mongodb.net/Iotron?retryWrites=true&w=majority&appName=Cluster0")
+    db = client.Iotron
+    schools = db.school_list.find()
+    return render(request, 'school_list.html', {'schools': schools})

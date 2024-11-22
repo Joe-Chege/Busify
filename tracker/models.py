@@ -27,7 +27,6 @@ class VehicleData(Document):
     
 class School(models.Model):
     name = models.CharField(max_length=200)
-    location = models.JSONField()  # Replacing PointField with JSONField
     address = models.CharField(max_length=200, blank=True)  # Allow the field to be blank
 
     def __str__(self):
