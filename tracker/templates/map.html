@@ -83,6 +83,37 @@
             shadowSize: [41, 41]
         });
 
+        const schools = [
+            { name: "Nairobi Milimani Secondary School", coordinates: [-1.2828547378490278, 36.80720808752973] },
+            { name: "LIGHT ACADEMY PRI SCH, KILIMANI", coordinates: [-1.2896378503963155, 36.77005776125603] },
+            { name: "St. Mary's School", coordinates: [-1.2638693868611113, 36.77962511200248] },
+            { name: "Strathmore School", coordinates: [-1.269661562904382, 36.777132394781745] },
+            { name: "Sunrise Primary School", coordinates: [-1.2629885005113652, 36.92540942799898] },
+            { name: "Muslim Academy, Park Road", coordinates: [-1.2753500540456968, 36.831805016775455] },
+            { name: "Acacia Brook Schools", coordinates: [-1.1668828591959224, 36.92208333236396] },
+            { name: "Nairobi Academy", coordinates: [-1.3392039602725954, 36.75207109124131] },
+            { name: "Scholars International", coordinates: [-1.2855, 36.7922] },
+            { name: "Pioneer High School", coordinates: [-1.2915, 36.8180] }
+        ];
+
+        const schoolList = document.getElementById('school-list');
+        schools.forEach(school => {
+            const listItem = document.createElement('li');
+            listItem.textContent = school.name;
+            listItem.onclick = function () {
+                map.setView(school.coordinates, 18);
+                L.marker(school.coordinates, { icon: schoolIcon })
+                    .addTo(map)
+                    .bindPopup(`<b>${school.name}</b>`)
+                    .openPopup();
+            };
+            schoolList.appendChild(listItem);
+
+            L.marker(school.coordinates, { icon: schoolIcon })
+                .addTo(map)
+                .bindPopup(`<b>${school.name}</b>`);
+        });
+
         var vehicleIcon = L.icon({
             iconUrl: '/static/vehicle-icon.png',
             iconSize: [25, 41],

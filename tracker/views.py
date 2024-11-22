@@ -3,17 +3,20 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_mongoengine import generics
+from rest_framework import generics as drf_generics
 from .models import GPSData, SensorData, VehicleData, School
 from .serializers import GPSDataSerializer, SensorDataSerializer, SchoolSerializer, VehicleDataSerializer
 import json
 import datetime
+from rest_framework import status
+from rest_framework.views import APIView
 
 def gps_data_view(request):
     gps_data = GPSData.objects.all().values('device_id', 'latitude', 'longitude', 'timestamp')
     return JsonResponse(list(gps_data), safe=False)
 
 def map_view(request):
-    return render(request, 'map.html', {})
+    return render(request, 'map.html')
 
 class GPSDataCreateView(generics.ListCreateAPIView):
     queryset = GPSData.objects.all()
@@ -41,9 +44,19 @@ def school_list_create(request):
         serializer = SchoolSerializer(schools, many=True)
         return Response(serializer.data)
 
-class SchoolListCreateView(generics.ListCreateAPIView):
+class SchoolListCreateView(drf_generics.ListCreateAPIView):
     queryset = School.objects.all()
     serializer_class = SchoolSerializer
+
+    def post(self, request, *args, **kwargs):
+        if isinstance(request.data, list):
+            serializer = self.get_serializer(data=request.data, many=True)
+        else:
+            serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class VehicleDataListCreateView(generics.ListCreateAPIView):
     queryset = VehicleData.objects.all()
